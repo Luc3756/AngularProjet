@@ -1,11 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { EventService } from '../services/event.service';
 
 @Component({
   selector: 'app-event',
   templateUrl: './event.component.html',
-  styleUrls: ['./event.component.scss']
+  styleUrls: ['./event.component.scss'],
 })
 export class EventComponent implements OnInit {
   events: any[] = [];
@@ -26,7 +26,7 @@ export class EventComponent implements OnInit {
 
   loadEvents(): void {
     this.eventService.getEvents().subscribe((data) => {
-      this.events = data.map(e => ({
+      this.events = data.map((e) => ({
         id: e.payload.doc.id,
         ...e.payload.doc.data(),
       }));
@@ -63,9 +63,21 @@ export class EventComponent implements OnInit {
         console.log('Événement supprimé');
         this.selectedEvent = null;
         this.loadEvents();
-      }).catch(error => {
-        console.error('Erreur lors de la suppression :', error);
       });
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        this.eventForm.get('imageUrl')?.setValue(reader.result as string); 
+      };
+      reader.readAsDataURL(file);
     }
   }
 }

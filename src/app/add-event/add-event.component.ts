@@ -1,22 +1,22 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { EventService } from '../services/event.service';
 
 @Component({
   selector: 'app-add-event',
   templateUrl: './add-event.component.html',
-  styleUrls: ['./add-event.component.scss']
+  styleUrls: ['./add-event.component.scss'],
 })
 export class AddEventComponent implements OnInit {
   eventForm!: FormGroup;
 
-  constructor(private eventService: EventService) {}
+  constructor(private eventService: EventService, private formBuilder: FormBuilder) {}
 
   ngOnInit(): void {
-    this.eventForm = new FormGroup({
-      title: new FormControl('', [Validators.required]),
-      imageUrl: new FormControl('', [Validators.required]), 
-      description: new FormControl('', [Validators.required])
+    this.eventForm = this.formBuilder.group({
+      title: ['', Validators.required],
+      description: ['', Validators.required],
+      imageUrl: ['', Validators.required],
     });
   }
 
@@ -25,23 +25,35 @@ export class AddEventComponent implements OnInit {
 
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      const relativePath = `assets/images/${file.name}`;
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        this.eventForm.patchValue({
+          imageUrl: reader.result as string,
+        });
+      };
 
-      this.eventForm.get('imageUrl')?.setValue(relativePath);
-    } else {
-      console.error('Aucun fichier sélectionné');
+      reader.readAsDataURL(file);
     }
   }
 
   onSubmit(): void {
-    if (this.eventForm.valid) {
-      this.eventService.addEvent(this.eventForm.value).then(() => {
-        console.log('Événement ajouté avec succès');
-      }).catch((error: any) => {
-        console.error('Erreur lors de l\'ajout de l\'événement :', error);
-      });
+
+    const confirmation = confirm('Êtes-vous sûr de vouloir ajouter cet événement ?');
+    
+    if (confirmation) {
+      if (this.eventForm.valid) {
+        this.eventService.addEvent(this.eventForm.value).then(() => {
+          console.log('Événement ajouté avec succès');
+          this.eventForm.reset();
+        }).catch((error) => {
+          console.error('Erreur lors de l\'ajout de l\'événement :', error);
+        });
+      } else {
+        console.log('Formulaire invalide');
+      }
     } else {
-      console.log('Formulaire invalide');
+      console.log('Ajout de l\'événement annulé');
     }
   }
 }
